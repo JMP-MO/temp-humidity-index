@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "cartopy>=0.25.0",
     "cfgrib>=0.9.15.1",
     "ecmwf-opendata",
     "ipykernel>=7.3.0",
@@ -18,7 +19,7 @@ dependencies = [
 [project.scripts]
 get-open-data = "temp_humidity_index.get_open_data:main"
 calc-wet-bulb-temp = "temp_humidity_index.calc_wet_bulb_temp:main"
-thi = "temp_humidity_index.main:main"
+calc_thi = "temp_humidity_index.calc_thi:main"
 
 [build-system]
 requires = ["hatchling"]
