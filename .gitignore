@@ -8,3 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VS Code settings
+.vscode/    
+
+# File types to ignore
+*.log
+*.nc    
+*.grib
+*.idx

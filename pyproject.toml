@@ -5,16 +5,19 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "cfgrib>=0.9.15.1",
     "ecmwf-opendata",
     "ipykernel>=7.3.0",
     "jupyter>=1.1.1",
     "metpy>=1.7.1",
+    "netcdf4>=1.7.4",
     "pyyaml>=6.0.3",
     "xarray>=2026.4.0",
 ]
 
 [project.scripts]
 get-open-data = "temp_humidity_index.get_open_data:main"
+calc-wet-bulb-temp = "temp_humidity_index.calc_wet_bulb_temp:main"
 thi = "temp_humidity_index.main:main"
 
 [build-system]
@@ -23,3 +26,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/temp_humidity_index"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+]
