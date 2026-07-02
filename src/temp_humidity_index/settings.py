@@ -10,8 +10,6 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.yaml"
-LOCAL_SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.local.yaml"
-
 
 @dataclass(frozen=True)
 class ProjectPaths:
@@ -78,9 +76,6 @@ def load_settings() -> Settings:
         raise FileNotFoundError(f"Settings file not found: {settings_path}")
 
     data = _load_yaml(settings_path)
-    if LOCAL_SETTINGS_PATH.exists():
-        _deep_update(data, _load_yaml(LOCAL_SETTINGS_PATH))
-
     paths_data = data.get("paths", {})
     files_data = data.get("files", {})
 

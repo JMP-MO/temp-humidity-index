@@ -1,7 +1,7 @@
 paths:
-  data_dir: .
-  download_dir: .
-  charts_dir: charts
+  data_dir: /Users/johnpill/DATA/temp_humidity_index
+  download_dir: /Users/johnpill/DATA/temp_humidity_index/downloads
+  charts_dir: /Users/johnpill/DATA/temp_humidity_index/charts
 
 files:
   raw_grib: ifs_2t_dp_msl.grib
