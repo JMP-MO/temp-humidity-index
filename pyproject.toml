@@ -20,9 +20,10 @@ dependencies = [
 [project.scripts]
 get-open-data = "temp_humidity_index.get_open_data:main"
 calc-wet-bulb-temp = "temp_humidity_index.calc_wet_bulb_temp:main"
-calc_thi = "temp_humidity_index.calc_thi:main"
-plot_heat_risk_charts = "temp_humidity_index.plot_heat_risk_charts:main"
-plot_thi_charts = "temp_humidity_index.plotting.plot_thi_charts:main"
+calc-thi = "temp_humidity_index.calc_thi:main"
+plot-heat-risk_charts = "temp_humidity_index.plot_heat_risk_charts:main"
+plot-thi-charts = "temp_humidity_index.plotting.plot_thi_charts:main"
+build-website = "temp_humidity_index.web.build_website:main"
 run-thi = "temp_humidity_index.main:main"
 
 [build-system]

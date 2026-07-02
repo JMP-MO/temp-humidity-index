@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+from pathlib import Path
 
 from temp_humidity_index.settings import load_settings
 
@@ -26,6 +27,12 @@ def _calculate_thi(t_dry_c: np.ndarray, t_wet_c: np.ndarray) -> np.ndarray:
         THI in Celsius
     """
     return 0.4 * (t_dry_c + t_wet_c) + 4.8
+
+
+def _remove_if_exists(path: Path) -> None:
+    if path.exists():
+        path.chmod(0o644)
+        path.unlink()
 
 
 def main():
@@ -76,7 +83,10 @@ def main():
 
     # Assign new variable and save
     ds_out = xr.Dataset({"thi": thi_da})
+    ds.close()
+    _remove_if_exists(output_file)
     ds_out.to_netcdf(output_file)
+    ds_out.close()
     print(f"Wrote output file: {output_file}")
     print(f"New variable: thi")
 

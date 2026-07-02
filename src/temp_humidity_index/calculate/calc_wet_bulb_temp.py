@@ -1,7 +1,12 @@
 import xarray as xr
 import numpy as np
+from pathlib import Path
 
 from temp_humidity_index.settings import load_settings
+
+# Initially I computed wet bulb temperature using metpy's function.
+# However, this proved far too slow for development and testing. 
+# I reserached this approach to calculating wet bulb temperature using a fast approximation from Stull (2011).
 
 
 def _find_var(ds: xr.Dataset, candidates: list[str]) -> xr.DataArray:
@@ -11,16 +16,29 @@ def _find_var(ds: xr.Dataset, candidates: list[str]) -> xr.DataArray:
     raise KeyError(f"Could not find variable. Tried: {candidates}")
 
 
+def _remove_if_exists(path: Path) -> None:
+    if path.exists():
+        path.chmod(0o644)
+        path.unlink()
+
+
 def _relative_humidity_from_t_td(t_c: np.ndarray, td_c: np.ndarray) -> np.ndarray:
     """Compute relative humidity (%) from dry-bulb and dewpoint temperatures in Celsius."""
     a = 17.625
     b = 243.04
+    # Magnus-Tetens equation for relative humidity
     rh = 100.0 * np.exp((a * td_c) / (b + td_c) - (a * t_c) / (b + t_c))
     return np.clip(rh, 0.0, 100.0)
 
 
 def _compute_wet_bulb_fast_approx(t2m: xr.DataArray, d2m: xr.DataArray) -> np.ndarray:
-    """Fast approximate wet-bulb temperature (Stull 2011), returns Kelvin."""
+    """
+    Fast approximate wet-bulb temperature (Stull 2011), returns Kelvin.
+    Reference:
+    Stull, R. (2011). Wet-Bulb Temperature from Relative Humidity and Air Temperature. 
+    Journal of Applied Meteorology and Climatology.  
+    It is valid for temperatures between -20° C and 50° C and RH values from 5% to 99%
+    """
     t_c = t2m.values - 273.15
     td_c = d2m.values - 273.15
     rh = _relative_humidity_from_t_td(t_c, td_c)
@@ -70,7 +88,10 @@ def main():
 
     ds_out = ds.assign(tw=tw_da)
 
+    ds.close()
+    _remove_if_exists(output_file)
     ds_out.to_netcdf(output_file)
+    ds_out.close()
     print(f"Wrote derived field to: {output_file}")
 
 

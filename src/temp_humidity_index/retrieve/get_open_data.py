@@ -1,7 +1,14 @@
 from ecmwf.opendata import Client
 import xarray as xr
+from pathlib import Path
 
 from temp_humidity_index.settings import load_settings
+
+
+def _remove_if_exists(path: Path) -> None:
+    if path.exists():
+        path.chmod(0o644)
+        path.unlink()
 
 
 def main():
@@ -12,6 +19,9 @@ def main():
     filename = settings.raw_grib_path
     nc_filename = settings.raw_nc_path
     steps = list(range(0, 49, 6))
+
+    _remove_if_exists(filename)
+    _remove_if_exists(nc_filename)
 
     # Instantiate the client
     client = Client(source="ecmwf")

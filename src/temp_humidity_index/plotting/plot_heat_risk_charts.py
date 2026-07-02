@@ -1,6 +1,4 @@
 
-import yaml
-
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import numpy as np
@@ -11,6 +9,11 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 
 from temp_humidity_index.settings import load_settings
+from temp_humidity_index.plotting.utils import (
+    get_initialisation_time,
+    get_valid_time,
+    get_step_hours,
+)
 
 BINS = [-np.inf, 20, 23, 24, 27, np.inf]
 
@@ -32,70 +35,6 @@ CMAP = ListedColormap(
     ]
 )
 CMAP.set_bad((1, 1, 1, 0))
-
-
-def get_initialisation_time(ds):
-    """Return model initialisation datetime and formatted strings."""
-
-    if "time" not in ds.coords:
-        return None, "N/A", "unknown"
-
-    time_coord = ds["time"]
-
-    if "time" in time_coord.dims:
-        init = time_coord.isel(time=0).values
-    else:
-        init = time_coord.values
-
-    init_str = np.datetime_as_string(init, unit="m")
-    init_date = np.datetime_as_string(init, unit="D").replace("-", "")
-
-    return init, init_str, init_date
-
-
-def get_valid_time(ds, step_idx, init_time):
-    """Return validity time for a forecast step."""
-
-    if "valid_time" in ds.coords:
-        vt = ds["valid_time"]
-
-        indexers = {}
-
-        if "time" in vt.dims:
-            indexers["time"] = 0
-
-        if "step" in vt.dims and step_idx is not None:
-            indexers["step"] = step_idx
-
-        value = vt.isel(**indexers).values
-
-    elif init_time is not None and step_idx is not None:
-        value = (
-            np.datetime64(init_time)
-            + ds["step"].isel(step=step_idx).values
-        )
-
-    elif init_time is not None:
-        value = np.datetime64(init_time)
-
-    else:
-        return None
-
-    return np.datetime64(value)
-
-
-def get_step_hours(ds, step_idx):
-    """Return forecast lead time in hours."""
-
-    if step_idx is None:
-        return 0
-
-    step = ds["step"].isel(step=step_idx).values
-
-    if np.issubdtype(np.asarray(step).dtype, np.timedelta64):
-        return int(step / np.timedelta64(1, "h"))
-
-    return int(step)
 
 
 def categorise_thi(thi):
@@ -161,10 +100,12 @@ def plot_thi(
     plt.close(fig)
 
 
-def process_dataset(ds, output_dir):
+def process_dataset(ds, charts_dir):
     """Generate plots for every forecast step."""
 
     init_val, init_str, init_date = get_initialisation_time(ds)
+    run_dir = Path(charts_dir) / init_date
+    run_dir.mkdir(parents=True, exist_ok=True)
 
     if "step" in ds.dims:
         step_indices = range(ds.sizes["step"])
@@ -193,10 +134,7 @@ def process_dataset(ds, output_dir):
 
         step_hours = get_step_hours(ds, step_idx)
 
-        outfile = (
-            output_dir
-            / f"ifs_heat_stress_{init_date}_{step_hours:03d}.png"
-        )
+        outfile = run_dir / f"ifs_heat_stress_{init_date}_{step_hours:03d}.png"
 
         plot_thi(
             categorise_thi(thi),
@@ -212,12 +150,12 @@ def main():
 
     settings = load_settings()
 
-    output_dir = Path(settings.paths.charts_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    charts_dir = Path(settings.paths.charts_dir)
+    charts_dir.mkdir(parents=True, exist_ok=True)
 
     ds = xr.open_dataset(settings.thi_nc_path)
 
-    process_dataset(ds, output_dir)
+    process_dataset(ds, charts_dir)
 
 
 if __name__ == "__main__":

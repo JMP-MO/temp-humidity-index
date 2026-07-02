@@ -53,10 +53,12 @@ def plot_thi_data(
     plt.close(fig)
 
 
-def process_dataset(ds, output_dir):
+def process_dataset(ds, charts_dir):
     """Generate plots for every forecast step."""
 
     init_val, init_str, init_date = get_initialisation_time(ds)
+    run_dir = Path(charts_dir) / init_date
+    run_dir.mkdir(parents=True, exist_ok=True)
 
     if "step" in ds.dims:
         step_indices = range(ds.sizes["step"])
@@ -85,7 +87,7 @@ def process_dataset(ds, output_dir):
 
         step_hours = get_step_hours(ds, step_idx)
 
-        outfile = (output_dir / f"ifs_thi_data_{init_date}_{step_hours:03d}.png")
+        outfile = run_dir / f"ifs_thi_data_{init_date}_{step_hours:03d}.png"
 
         plot_thi_data(
             thi,
@@ -101,12 +103,12 @@ def main():
 
     settings = load_settings()
 
-    output_dir = Path(settings.paths.charts_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    charts_dir = Path(settings.paths.charts_dir)
+    charts_dir.mkdir(parents=True, exist_ok=True)
 
     ds = xr.open_dataset(settings.thi_nc_path)
 
-    process_dataset(ds, output_dir)
+    process_dataset(ds, charts_dir)
 
 
 if __name__ == "__main__":
