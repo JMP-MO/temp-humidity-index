@@ -6,5 +6,5 @@ paths:
 files:
   raw_grib: ifs_2t_dp_msl.grib
   raw_nc: ifs_2t_dp_msl.nc
-  wet_bulb_nc: ifs_2t_dp_msl_tw.nc
+  wet_bulb_nc: ifs_2t_dp_msl_tw_fast.nc
   thi_nc: ifs_thi.nc
