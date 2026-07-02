@@ -1,9 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor
-import os
-
 import xarray as xr
-from metpy.calc import wet_bulb_temperature
-from metpy.units import units
 import numpy as np
 
 from temp_humidity_index.settings import load_settings
@@ -16,61 +11,28 @@ def _find_var(ds: xr.Dataset, candidates: list[str]) -> xr.DataArray:
     raise KeyError(f"Could not find variable. Tried: {candidates}")
 
 
-def _wet_bulb_chunk(args: tuple[np.ndarray, np.ndarray, np.ndarray]) -> np.ndarray:
-    pressure_chunk, temp_chunk, dewpoint_chunk = args
-    pressure_hpa = (pressure_chunk * units.pascal).to(units.hectopascal)
-    temperature = temp_chunk * units.kelvin
-    dewpoint = dewpoint_chunk * units.kelvin
-    tw = wet_bulb_temperature(pressure_hpa, temperature, dewpoint)
-    return tw.to(units.kelvin).magnitude
+def _relative_humidity_from_t_td(t_c: np.ndarray, td_c: np.ndarray) -> np.ndarray:
+    """Compute relative humidity (%) from dry-bulb and dewpoint temperatures in Celsius."""
+    a = 17.625
+    b = 243.04
+    rh = 100.0 * np.exp((a * td_c) / (b + td_c) - (a * t_c) / (b + t_c))
+    return np.clip(rh, 0.0, 100.0)
 
 
-def _compute_wet_bulb_parallel(msl: xr.DataArray, t2m: xr.DataArray, d2m: xr.DataArray) -> np.ndarray:
-    pressure = msl.values
-    temperature = t2m.values
-    dewpoint = d2m.values
+def _compute_wet_bulb_fast_approx(t2m: xr.DataArray, d2m: xr.DataArray) -> np.ndarray:
+    """Fast approximate wet-bulb temperature (Stull 2011), returns Kelvin."""
+    t_c = t2m.values - 273.15
+    td_c = d2m.values - 273.15
+    rh = _relative_humidity_from_t_td(t_c, td_c)
 
-    if pressure.ndim < 2:
-        raise ValueError("Expected at least 2D arrays ending in latitude/longitude.")
-
-    # Operate on independent 2D lat/lon slices (e.g. step, or time+step).
-    lead_shape = pressure.shape[:-2]
-    n_slices = int(np.prod(lead_shape)) if lead_shape else 1
-
-    cpu_count = os.cpu_count() or 1
-    env_workers = os.getenv("WET_BULB_WORKERS")
-    if env_workers:
-        requested = max(1, int(env_workers))
-        workers = min(requested, n_slices)
-    else:
-        workers = max(1, min(cpu_count, n_slices))
-
-    if workers == 1:
-        return _wet_bulb_chunk((pressure, temperature, dewpoint))
-
-    pressure_flat = pressure.reshape(-1, pressure.shape[-2], pressure.shape[-1])
-    temperature_flat = temperature.reshape(-1, temperature.shape[-2], temperature.shape[-1])
-    dewpoint_flat = dewpoint.reshape(-1, dewpoint.shape[-2], dewpoint.shape[-1])
-
-    edges = np.linspace(0, n_slices, workers + 1, dtype=int)
-    chunks: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
-    for i in range(workers):
-        start = edges[i]
-        end = edges[i + 1]
-        if start < end:
-            chunks.append(
-                (
-                    pressure_flat[start:end, :, :],
-                    temperature_flat[start:end, :, :],
-                    dewpoint_flat[start:end, :, :],
-                )
-            )
-
-    with ProcessPoolExecutor(max_workers=workers) as pool:
-        out_parts = list(pool.map(_wet_bulb_chunk, chunks))
-
-    tw_flat = np.concatenate(out_parts, axis=0)
-    return tw_flat.reshape(pressure.shape)
+    tw_c = (
+        t_c * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
+        + np.arctan(t_c + rh)
+        - np.arctan(rh - 1.676331)
+        + 0.00391838 * np.power(rh, 1.5) * np.arctan(0.023101 * rh)
+        - 4.686035
+    )
+    return tw_c + 273.15
 
 
 def main():
@@ -88,12 +50,10 @@ def main():
     # they are collocated on the same horizontal grid and can be aligned directly.
     d2m = _find_var(ds, ["d2m", "2d", "dewpoint", "dewpoint_temperature"])
     t2m = _find_var(ds, ["t2m", "2t", "temperature"])
-    msl = _find_var(ds, ["msl", "prmsl", "mean_sea_level_pressure"])
+    t2m, d2m = xr.align(t2m, d2m, join="exact")
 
-    t2m, d2m, msl = xr.align(t2m, d2m, msl, join="exact")
-
-    tw = _compute_wet_bulb_parallel(msl, t2m, d2m)
-    print("Wet bulb temperature calculated.")
+    tw = _compute_wet_bulb_fast_approx(t2m, d2m)
+    print("Wet bulb temperature calculated (fast approximation).")
 
     tw_da = xr.DataArray(
         tw,
