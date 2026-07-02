@@ -13,7 +13,7 @@ from temp_humidity_index.settings import load_settings
 
 
 CHART_RE = re.compile(
-    r"^ifs_(?P<kind>thi_data|heat_stress)_(?P<date>\d{8})_(?P<step>\d{3})\.png$"
+  r"^ifs_(?P<kind>thi_data|heat_stress|2t_data|2d_data)_(?P<date>\d{8})_(?P<step>\d{3})\.png$"
 )
 
 
@@ -22,6 +22,8 @@ class ChartStep:
     step_hours: int
     thi_image: str
     heat_risk_image: str
+    t2_image: str | None
+    d2_image: str | None
 
 
 def _discover_latest_pairs(charts_root: Path) -> tuple[str, list[ChartStep], Path]:
@@ -59,6 +61,8 @@ def _discover_latest_pairs(charts_root: Path) -> tuple[str, list[ChartStep], Pat
                 step_hours=step_hours,
                 thi_image=thi_path.name,
                 heat_risk_image=heat_path.name,
+            t2_image=chart_files.get("2t_data").name if chart_files.get("2t_data") else None,
+            d2_image=chart_files.get("2d_data").name if chart_files.get("2d_data") else None,
             )
         )
 
@@ -84,11 +88,18 @@ def _copy_latest_images(latest_run_dir: Path, steps: list[ChartStep], output_dir
     images_dir.mkdir(parents=True, exist_ok=True)
 
     for step in steps:
-        for image_name in (step.thi_image, step.heat_risk_image):
-            source = latest_run_dir / image_name
-            if not source.exists():
-                raise FileNotFoundError(f"Missing chart image: {source}")
-            shutil.copy2(source, images_dir / image_name)
+      for image_name in (
+        step.thi_image,
+        step.heat_risk_image,
+        step.t2_image,
+        step.d2_image,
+      ):
+        if image_name is None:
+          continue
+        source = latest_run_dir / image_name
+        if not source.exists():
+            raise FileNotFoundError(f"Missing chart image: {source}")
+        shutil.copy2(source, images_dir / image_name)
 
 
 def _build_manifest(latest_date: str, steps: list[ChartStep]) -> dict:
@@ -172,6 +183,7 @@ def _render_html(manifest: dict) -> str:
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
+    .row-gap { margin-top: 16px; }
     figure { margin: 0; }
     .card {
       border: 1px solid var(--border);
@@ -182,6 +194,18 @@ def _render_html(manifest: dict) -> str:
     .card h2 { margin: 0; padding: 16px 18px 0; font-size: 1.05rem; }
     .card p { margin: 8px 18px 0; color: var(--muted); font-size: 0.95rem; }
     .card img { display: block; width: 100%; height: auto; }
+    .missing {
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+      color: var(--muted);
+      font-weight: 600;
+      border-top: 1px solid var(--border);
+      background: rgba(107, 114, 128, 0.05);
+    }
+    .missing[hidden] {
+      display: none !important;
+    }
     .footnote { margin-top: 14px; color: var(--muted); font-size: 0.92rem; }
     @media (max-width: 980px) {
       .grid { grid-template-columns: 1fr; }
@@ -217,7 +241,7 @@ def _render_html(manifest: dict) -> str:
     <section class="cards">
       <div class="grid">
         <figure class="card">
-          <h2>THI</h2>
+          <h2>THI (Celsius)</h2>
           <p id="thi-caption"></p>
           <img id="thi-image" alt="THI chart">
         </figure>
@@ -225,6 +249,21 @@ def _render_html(manifest: dict) -> str:
           <h2>Heat Stress Risk</h2>
           <p id="risk-caption"></p>
           <img id="risk-image" alt="Heat stress risk chart">
+        </figure>
+      </div>
+
+      <div class="grid row-gap">
+        <figure class="card">
+          <h2>2m Temperature (Celsius)</h2>
+          <p id="t2-caption"></p>
+          <img id="t2-image" alt="2m temperature chart">
+          <div id="t2-missing" class="missing" hidden>2m temperature chart not available for this run.</div>
+        </figure>
+        <figure class="card">
+          <h2>2m Dew Point Temperature (Celsius)</h2>
+          <p id="d2-caption"></p>
+          <img id="d2-image" alt="2m dew point temperature chart">
+          <div id="d2-missing" class="missing" hidden>2m dew point temperature chart not available for this run.</div>
         </figure>
       </div>
     </section>
@@ -241,8 +280,14 @@ def _render_html(manifest: dict) -> str:
     const runSummary = document.getElementById('run-summary');
     const thiImage = document.getElementById('thi-image');
     const riskImage = document.getElementById('risk-image');
+    const t2Image = document.getElementById('t2-image');
+    const d2Image = document.getElementById('d2-image');
     const thiCaption = document.getElementById('thi-caption');
     const riskCaption = document.getElementById('risk-caption');
+    const t2Caption = document.getElementById('t2-caption');
+    const d2Caption = document.getElementById('d2-caption');
+    const t2Missing = document.getElementById('t2-missing');
+    const d2Missing = document.getElementById('d2-missing');
 
     runSummary.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'} loaded`;
     stepStart.textContent = `First step: ${String(steps[0].step_hours).padStart(3, '0')}h`;
@@ -262,6 +307,28 @@ def _render_html(manifest: dict) -> str:
       riskImage.src = `images/${step.heat_risk_image}`;
       thiCaption.textContent = `THI for step ${stepLabel}h`;
       riskCaption.textContent = `Heat stress risk for step ${stepLabel}h`;
+
+      if (step.t2_image) {
+        t2Image.hidden = false;
+        t2Missing.hidden = true;
+        t2Image.src = `images/${step.t2_image}`;
+        t2Caption.textContent = `2t for step ${stepLabel}h`;
+      } else {
+        t2Image.hidden = true;
+        t2Missing.hidden = false;
+        t2Caption.textContent = `2t for step ${stepLabel}h`;
+      }
+
+      if (step.d2_image) {
+        d2Image.hidden = false;
+        d2Missing.hidden = true;
+        d2Image.src = `images/${step.d2_image}`;
+        d2Caption.textContent = `2d for step ${stepLabel}h`;
+      } else {
+        d2Image.hidden = true;
+        d2Missing.hidden = false;
+        d2Caption.textContent = `2d for step ${stepLabel}h`;
+      }
     }
 
     slider.addEventListener('input', (event) => {

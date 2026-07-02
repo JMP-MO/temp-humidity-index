@@ -1,4 +1,3 @@
-
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import numpy as np
@@ -27,11 +26,11 @@ TICK_LABELS = [
 
 CMAP = ListedColormap(
     [
-        "#D2FFFA",
-        "#FFD700",
-        "#FF8C00",
-        "#FF0000",
-        "#EF00EF",
+        "#ACE9FEFF",
+        "#68FF3E",
+        "#F4FF2C",
+        "#FFA220",
+        "#FF2828",
     ]
 )
 CMAP.set_bad((1, 1, 1, 0))
@@ -63,11 +62,11 @@ def plot_thi(
         subplot_kw={"projection": ccrs.PlateCarree()},
     )
 
-    ax.add_feature(
-        cfeature.OCEAN,
-        facecolor="#7EC8E3",
-        edgecolor="none",
-    )
+    # ax.add_feature(
+    #     cfeature.OCEAN,
+    #     facecolor="#7EC8E3",
+    #     edgecolor="none",
+    # )
 
     mappable = category_data.plot(
         ax=ax,
