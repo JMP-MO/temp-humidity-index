@@ -20,3 +20,6 @@ wheels/
 *.nc    
 *.grib
 *.idx
+
+# Local, machine-specific settings overrides
+config/settings.local.yaml

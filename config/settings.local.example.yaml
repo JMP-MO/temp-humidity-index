@@ -1,0 +1,17 @@
+# Copy to config/settings.local.yaml and edit for your machine.
+paths:
+  # Example Linux scratch/public_html layout:
+  # data_dir: /scratch/$USER/temp-humidity-index/data
+  # download_dir: /scratch/$USER/temp-humidity-index/downloads
+  # charts_dir: /home/$USER/public_html/thi_charts
+
+  # Example macOS local layout:
+  # data_dir: /Users/yourname/data/temp-humidity-index
+  # download_dir: /Users/yourname/data/temp-humidity-index/downloads
+  # charts_dir: /Users/yourname/Sites/thi_charts
+
+files:
+  raw_grib: ifs_2t_dp_msl.grib
+  raw_nc: ifs_2t_dp_msl.nc
+  wet_bulb_nc: ifs_2t_dp_msl_tw.nc
+  thi_nc: ifs_thi.nc

@@ -1,4 +1,3 @@
-from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 import os
 
@@ -7,9 +6,7 @@ from metpy.calc import wet_bulb_temperature
 from metpy.units import units
 import numpy as np
 
-
-INPUT_FILE = Path("ifs_2t_dp_msl.nc")
-OUTPUT_FILE = Path("ifs_2t_dp_msl_tw.nc")
+from temp_humidity_index.settings import load_settings
 
 
 def _find_var(ds: xr.Dataset, candidates: list[str]) -> xr.DataArray:
@@ -77,11 +74,15 @@ def _compute_wet_bulb_parallel(msl: xr.DataArray, t2m: xr.DataArray, d2m: xr.Dat
 
 
 def main():
-    if not INPUT_FILE.exists():
-        raise FileNotFoundError(f"Input NetCDF file not found: {INPUT_FILE}")
+    settings = load_settings()
+    input_file = settings.raw_nc_path
+    output_file = settings.wet_bulb_nc_path
 
-    ds = xr.open_dataset(INPUT_FILE, engine="netcdf4")
-    print(f"Opened input NetCDF file: {INPUT_FILE}")
+    if not input_file.exists():
+        raise FileNotFoundError(f"Input NetCDF file not found: {input_file}")
+
+    ds = xr.open_dataset(input_file, engine="netcdf4")
+    print(f"Opened input NetCDF file: {input_file}")
 
     # These variables can come from different GRIB level types, but in this NetCDF
     # they are collocated on the same horizontal grid and can be aligned directly.
@@ -109,8 +110,8 @@ def main():
 
     ds_out = ds.assign(tw=tw_da)
 
-    ds_out.to_netcdf(OUTPUT_FILE)
-    print(f"Wrote derived field to: {OUTPUT_FILE}")
+    ds_out.to_netcdf(output_file)
+    print(f"Wrote derived field to: {output_file}")
 
 
 if __name__ == "__main__":

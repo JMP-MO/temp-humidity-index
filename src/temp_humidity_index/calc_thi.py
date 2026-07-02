@@ -1,10 +1,7 @@
-from pathlib import Path
 import numpy as np
 import xarray as xr
 
-
-INPUT_FILE = Path("ifs_2t_dp_msl_tw.nc")
-OUTPUT_FILE = Path("ifs_2t_dp_msl_tw_thi.nc")
+from temp_humidity_index.settings import load_settings
 
 
 def _find_var(ds: xr.Dataset, candidates: list[str]) -> xr.DataArray:
@@ -28,18 +25,21 @@ def _calculate_thi(t_dry_c: np.ndarray, t_wet_c: np.ndarray) -> np.ndarray:
     Returns:
         THI in Celsius
     """
-    thi = 0.4 * (t_dry_c + t_wet_c) + 4.8
-    return thi
+    return 0.4 * (t_dry_c + t_wet_c) + 4.8
 
 
 def main():
     """Load NetCDF, calculate THI using dry and wet bulb temperatures, and save output."""
-    if not INPUT_FILE.exists():
-        raise FileNotFoundError(f"Input NetCDF file not found: {INPUT_FILE}")
+    settings = load_settings()
+    input_file = settings.wet_bulb_nc_path
+    output_file = settings.thi_nc_path
+
+    if not input_file.exists():
+        raise FileNotFoundError(f"Input NetCDF file not found: {input_file}")
 
     # Load dataset
-    ds = xr.open_dataset(INPUT_FILE, engine="netcdf4")
-    print(f"Opened input NetCDF file: {INPUT_FILE}")
+    ds = xr.open_dataset(input_file, engine="netcdf4")
+    print(f"Opened input NetCDF file: {input_file}")
     print(f"Dataset dimensions: {ds.dims}")
 
     # Find variables
@@ -76,8 +76,8 @@ def main():
 
     # Assign new variable and save
     ds_out = xr.Dataset({"thi": thi_da})
-    ds_out.to_netcdf(OUTPUT_FILE)
-    print(f"Wrote output file: {OUTPUT_FILE}")
+    ds_out.to_netcdf(output_file)
+    print(f"Wrote output file: {output_file}")
     print(f"New variable: thi")
 
 

@@ -1,12 +1,16 @@
 from ecmwf.opendata import Client
 import xarray as xr
 
+from temp_humidity_index.settings import load_settings
+
 
 def main():
+    settings = load_settings()
+
     # Params
     parameters = ['2d', '2t', 'msl']
-    filename = "ifs_2t_dp_msl.grib"
-    nc_filename = "ifs_2t_dp_msl.nc"
+    filename = settings.raw_grib_path
+    nc_filename = settings.raw_nc_path
     steps = list(range(0, 49, 6))
 
     # Instantiate the client
@@ -19,24 +23,24 @@ def main():
         levtype="sfc",
         step=steps,
         param=parameters,
-        target=filename,
+        target=str(filename),
     )
 
     print(f"Downloaded: {filename}")
 
     # GRIB contains multiple level types; open and merge the relevant groups before writing NetCDF.
     ds_hag = xr.open_dataset(
-        filename,
+        str(filename),
         engine="cfgrib",
         backend_kwargs={"filter_by_keys": {"typeOfLevel": "heightAboveGround"}},
     )
     ds_meansea = xr.open_dataset(
-        filename,
+        str(filename),
         engine="cfgrib",
         backend_kwargs={"filter_by_keys": {"typeOfLevel": "meanSea"}},
     )
     ds = xr.merge([ds_hag, ds_meansea], compat="override")
-    ds.to_netcdf(nc_filename)
+    ds.to_netcdf(str(nc_filename))
 
     ds_hag.close()
     ds_meansea.close()
