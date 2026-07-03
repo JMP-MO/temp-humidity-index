@@ -16,6 +16,7 @@ class ProjectPaths:
     data_dir: Path
     download_dir: Path
     charts_dir: Path
+    web_dir: Path
 
 
 @dataclass(frozen=True)
@@ -84,11 +85,13 @@ def load_settings() -> Settings:
         os.getenv("THI_DOWNLOAD_DIR", paths_data.get("download_dir", str(data_dir)))
     )
     charts_dir = _resolve_path(os.getenv("THI_CHARTS_DIR", paths_data.get("charts_dir", "charts")))
+    web_dir = _resolve_path(os.getenv("THI_WEB_DIR", paths_data.get("web_dir", "web")))
 
     paths = ProjectPaths(
         data_dir=data_dir,
         download_dir=download_dir,
         charts_dir=charts_dir,
+        web_dir=web_dir,
     )
     files = ProjectFiles(
         raw_grib=files_data.get("raw_grib", "ifs_2t_dp_msl.grib"),

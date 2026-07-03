@@ -376,7 +376,7 @@ def main(argv: list[str] | None = None) -> None:
 
     settings = load_settings()
     charts_dir = args.charts_dir or Path(settings.paths.charts_dir)
-    output_dir = args.output_dir or (charts_dir / "website")
+    output_dir = args.output_dir or Path(settings.paths.web_dir)
 
     index_path = build_site(charts_dir, output_dir)
     print(f"Wrote website: {index_path}")

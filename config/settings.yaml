@@ -1,7 +1,8 @@
 paths:
-  data_dir: /Users/johnpill/DATA/temp_humidity_index
-  download_dir: /Users/johnpill/DATA/temp_humidity_index/downloads
-  charts_dir: /Users/johnpill/DATA/temp_humidity_index/charts
+  data_dir: /data/scratch/john.pill/DATA/temp_humidity_index
+  download_dir: /data/scratch/john.pill/DATA/temp_humidity_index/downloads
+  charts_dir: /data/scratch/john.pill/DATA/temp_humidity_index/charts
+  web_dir: /home/users/john.pill/public_html/temp-humidity-index
 
 files:
   raw_grib: ifs_2t_dp_msl.grib
