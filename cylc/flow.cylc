@@ -1,0 +1,78 @@
+[meta]
+    title = Temperature Humidity Index pipeline
+
+[scheduler]
+    allow implicit tasks = False
+
+[scheduling]
+    cycling mode = gregorian
+    max active cycle points = 1
+    # 03Z, 09Z, 15Z, 21Z each day (6-hourly with a 3-hour offset)
+    initial cycle point = 20260706T0000Z
+
+    [[graph]]
+        PT6H = """
+            get_open_data =>
+            calc_wet_bulb_temp =>
+            calc_thi =>
+            plot_heat_risk_charts =>
+            plot_charts =>
+            build_website
+        """
+
+[runtime]
+    [[root]]
+        execution time limit = PT2H
+        env-script = """
+            unset CONDA_PREFIX CONDA_DEFAULT_ENV PYTHONHOME PYTHONPATH VIRTUAL_ENV
+            export THI_VENV="/home/users/john.pill/Projects/temp-humidity-index/.venv"
+            export VIRTUAL_ENV="${THI_VENV}"
+            export PATH="${THI_VENV}/bin:${PATH}"
+        """
+        [[[environment]]]
+            THI_PROJECT_ROOT = /home/users/john.pill/Projects/temp-humidity-index
+        [[[directives]]]
+            --ntasks = 1
+            --mem = 4G
+
+    [[get_open_data]]
+        # Retry for upstream/data-availability failures.
+        execution retry delays = PT15M, PT30M, PT1H
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            get-open-data
+        """
+
+    [[calc_wet_bulb_temp]]
+        execution time limit = PT3H
+        [[[directives]]]
+            --ntasks = 4
+            --mem = 16G
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            calc-wet-bulb-temp
+        """
+
+    [[calc_thi]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            calc-thi
+        """
+
+    [[plot_heat_risk_charts]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            plot-heat-risk-charts
+        """
+
+    [[plot_charts]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            plot-variable-charts
+        """
+
+    [[build_website]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            build-website
+        """

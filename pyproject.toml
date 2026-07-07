@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "cartopy>=0.25.0",
     "cfgrib>=0.9.15.1",
+    "eccodeslib>=2.47.3.22",
     "ecmwf-opendata",
     "ipykernel>=7.3.0",
     "jupyter>=1.1.1",
@@ -18,9 +19,9 @@ dependencies = [
 ]
 
 [project.scripts]
-get-open-data = "temp_humidity_index.get_open_data:main"
-calc-wet-bulb-temp = "temp_humidity_index.calc_wet_bulb_temp:main"
-calc-thi = "temp_humidity_index.calc_thi:main"
+get-open-data = "temp_humidity_index.retrieve.get_open_data:main"
+calc-wet-bulb-temp = "temp_humidity_index.calculate.calc_wet_bulb_temp:main"
+calc-thi = "temp_humidity_index.calculate.calc_thi:main"
 plot-heat-risk-charts = "temp_humidity_index.plotting.plot_heat_risk_charts:main"
 plot-variable-charts = "temp_humidity_index.plotting.plot_variable_charts:main"
 build-website = "temp_humidity_index.web.build_website:main"
