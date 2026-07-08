@@ -18,7 +18,8 @@ def main():
     parameters = ['2d', '2t', 'msl']
     filename = settings.raw_grib_path
     nc_filename = settings.raw_nc_path
-    steps = list(range(0, 49, 6))
+    # 7 days of forecast lead times at 6-hour intervals (0h..168h).
+    steps = list(range(0, 169, 6))
 
     _remove_if_exists(filename)
     _remove_if_exists(nc_filename)
