@@ -42,4 +42,4 @@ You can also override paths with environment variables:
 ### cylc Workflow
 To run:
 * `uv sync`
-* `cylc vip cylc -n temp-humidity-index`
+* `cylc vip ./cylc -n temp-humidity-index`

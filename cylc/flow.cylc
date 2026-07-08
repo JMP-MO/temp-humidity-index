@@ -7,11 +7,11 @@
 [scheduling]
     cycling mode = gregorian
     max active cycle points = 1
-    # 03Z, 09Z, 15Z, 21Z each day (6-hourly with a 3-hour offset)
-    initial cycle point = 20260706T0000Z
+    # Run every 6 hours at fixed UTC times: 03Z, 09Z, 15Z, 21Z.
+    initial cycle point = now
 
     [[graph]]
-        PT6H = """
+        T03/PT6H = """
             get_open_data =>
             calc_wet_bulb_temp =>
             calc_thi =>
@@ -22,7 +22,8 @@
 
 [runtime]
     [[root]]
-        execution time limit = PT2H
+        platform = spice
+        execution time limit = PT1H
         env-script = """
             unset CONDA_PREFIX CONDA_DEFAULT_ENV PYTHONHOME PYTHONPATH VIRTUAL_ENV
             export THI_VENV="/home/users/john.pill/Projects/temp-humidity-index/.venv"
@@ -45,13 +46,13 @@
 
     [[calc_wet_bulb_temp]]
         execution time limit = PT3H
-        [[[directives]]]
-            --ntasks = 4
-            --mem = 16G
         script = """
             cd "${THI_PROJECT_ROOT}"
             calc-wet-bulb-temp
         """
+        [[[directives]]]
+            --ntasks = 4
+            --mem = 16G
 
     [[calc_thi]]
         script = """

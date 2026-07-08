@@ -102,8 +102,8 @@ def plot_thi(
 def process_dataset(ds, charts_dir):
     """Generate plots for every forecast step."""
 
-    init_val, init_str, init_date = get_initialisation_time(ds)
-    run_dir = Path(charts_dir) / init_date
+    init_val, init_str, init_datetime = get_initialisation_time(ds)
+    run_dir = Path(charts_dir) / init_datetime
     run_dir.mkdir(parents=True, exist_ok=True)
 
     if "step" in ds.dims:
@@ -133,7 +133,7 @@ def process_dataset(ds, charts_dir):
 
         step_hours = get_step_hours(ds, step_idx)
 
-        outfile = run_dir / f"ifs_heat_stress_{init_date}_{step_hours:03d}.png"
+        outfile = run_dir / f"ifs_heat_stress_{init_datetime}_{step_hours:03d}.png"
 
         plot_thi(
             categorise_thi(thi),
