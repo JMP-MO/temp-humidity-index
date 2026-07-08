@@ -186,7 +186,14 @@ def _render_html(manifest: dict) -> str:
       backdrop-filter: blur(14px);
     }
     .controls { padding: 18px 20px; margin-bottom: 18px; }
-    .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+    .slider-row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
     .slider-labels { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; color: var(--muted); font-size: 0.92rem; }
     input[type="range"] { width: 100%; accent-color: var(--accent); }
     .step-title { font-size: 1.25rem; font-weight: 700; }
@@ -223,6 +230,7 @@ def _render_html(manifest: dict) -> str:
     @media (max-width: 980px) {
       .grid { grid-template-columns: 1fr; }
       .slider-row { grid-template-columns: 1fr; }
+      .slider-meta { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -238,16 +246,14 @@ def _render_html(manifest: dict) -> str:
 
     <section class="controls">
       <div class="slider-row">
-        <div>
+        <div class="slider-meta">
           <div class="step-title" id="step-title"></div>
           <div class="slider-labels">
             <span id="step-range-start"></span>
             <span id="step-range-end"></span>
           </div>
         </div>
-        <div>
-          <input id="step-slider" type="range" min="0" max="0" step="1" value="0">
-        </div>
+        <input id="step-slider" type="range" min="0" max="0" step="1" value="0">
       </div>
     </section>
 
