@@ -9,3 +9,8 @@ files:
   raw_nc: ifs_2t_dp_msl.nc
   wet_bulb_nc: ifs_2t_dp_msl_tw_fast.nc
   thi_nc: ifs_thi.nc
+
+retrieval:
+  parameters: ['2d', '2t', 'msl']
+  forecast_hours: 168
+  step_increment: 6
