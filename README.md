@@ -38,3 +38,9 @@ You can also override paths with environment variables:
     - does this in parallel. 
 
 **calc_temp_humidity_idx:**
+
+
+### cylc Workflow
+To run:
+* `uv sync`
+* `cylc vip ./cylc -n temp-humidity-index`

@@ -17,9 +17,9 @@ def get_initialisation_time(ds):
         init = time_coord.values
 
     init_str = np.datetime_as_string(init, unit="m")
-    init_date = np.datetime_as_string(init, unit="D").replace("-", "")
+    init_datetime = np.datetime_as_string(init, unit="h").replace("-", "").replace("T", "_")
 
-    return init, init_str, init_date
+    return init, init_str, init_datetime
 
 
 def get_valid_time(ds, step_idx, init_time):

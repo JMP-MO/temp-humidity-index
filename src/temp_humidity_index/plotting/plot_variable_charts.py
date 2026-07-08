@@ -20,14 +20,14 @@ def main():
         },
         {
             "name": "2t",
-            "dataset_path": settings.raw_nc_path,
+            "dataset_path": settings.wet_bulb_nc_path,
             "requested_var": "2t",
             "output_stem": "ifs_2t_data",
             "colorbar_label": "2t (degC)",
         },
         {
             "name": "2d",
-            "dataset_path": settings.raw_nc_path,
+            "dataset_path": settings.wet_bulb_nc_path,
             "requested_var": "2d",
             "output_stem": "ifs_2d_data",
             "colorbar_label": "2d (degC)",

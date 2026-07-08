@@ -13,7 +13,7 @@ from temp_humidity_index.settings import load_settings
 
 
 CHART_RE = re.compile(
-  r"^ifs_(?P<kind>thi_data|heat_stress|2t_data|2d_data)_(?P<date>\d{8})_(?P<step>\d{3})\.png$"
+  r"^ifs_(?P<kind>thi_data|heat_stress|2t_data|2d_data)_(?P<date>\d{8}_\d{2})_(?P<step>\d{3})\.png$"
 )
 
 
@@ -45,40 +45,44 @@ def _discover_latest_pairs(charts_root: Path) -> tuple[str, list[ChartStep], Pat
     if not grouped:
         raise FileNotFoundError(f"No chart images were found in {charts_root}")
 
-    latest_date = max(grouped)
-    latest_steps = grouped[latest_date]
+    # Prefer the newest run that has matched THI + heat-risk pairs.
+    for latest_date in sorted(grouped.keys(), reverse=True):
+        latest_steps = grouped[latest_date]
 
-    step_entries: list[ChartStep] = []
-    for step_hours in sorted(latest_steps):
-        chart_files = latest_steps[step_hours]
-        thi_path = chart_files.get("thi_data")
-        heat_path = chart_files.get("heat_stress")
-        if thi_path is None or heat_path is None:
+        step_entries: list[ChartStep] = []
+        for step_hours in sorted(latest_steps):
+            chart_files = latest_steps[step_hours]
+            thi_path = chart_files.get("thi_data")
+            heat_path = chart_files.get("heat_stress")
+            if thi_path is None or heat_path is None:
+                continue
+
+            step_entries.append(
+                ChartStep(
+                    step_hours=step_hours,
+                    thi_image=thi_path.name,
+                    heat_risk_image=heat_path.name,
+                    t2_image=chart_files.get("2t_data").name if chart_files.get("2t_data") else None,
+                    d2_image=chart_files.get("2d_data").name if chart_files.get("2d_data") else None,
+                )
+            )
+
+        if not step_entries:
             continue
 
-        step_entries.append(
-            ChartStep(
-                step_hours=step_hours,
-                thi_image=thi_path.name,
-                heat_risk_image=heat_path.name,
-            t2_image=chart_files.get("2t_data").name if chart_files.get("2t_data") else None,
-            d2_image=chart_files.get("2d_data").name if chart_files.get("2d_data") else None,
-            )
+        latest_run_dirs = [path for path in run_dirs if path.name == latest_date]
+        latest_run_dir = max(
+            latest_run_dirs,
+            default=charts_root,
+            key=lambda path: path.stat().st_mtime,
         )
 
-    if not step_entries:
-        raise FileNotFoundError(
-            f"No matched THI / heat-risk chart pairs were found for latest run {latest_date}"
-        )
+        return latest_date, step_entries, latest_run_dir
 
-    latest_run_dirs = [path for path in run_dirs if path.name == latest_date]
-    latest_run_dir = max(
-        latest_run_dirs,
-        default=charts_root,
-        key=lambda path: path.stat().st_mtime,
+    raise FileNotFoundError(
+        "No matched THI / heat-risk chart pairs were found in any run under "
+        f"{charts_root}"
     )
-
-    return latest_date, step_entries, latest_run_dir
 
 
 def _copy_latest_images(latest_run_dir: Path, steps: list[ChartStep], output_dir: Path) -> None:
@@ -110,9 +114,18 @@ def _build_manifest(latest_date: str, steps: list[ChartStep]) -> dict:
     }
 
 
+def _format_init_datetime(raw: str) -> str:
+    """Format YYYYMMDD_HH into a readable string e.g. '2026-07-07 03:00 UTC'."""
+    try:
+        date_part, hour_part = raw.split("_")
+        return f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]} {hour_part}:00 UTC"
+    except (ValueError, IndexError):
+        return raw
+
+
 def _render_html(manifest: dict) -> str:
     manifest_json = json.dumps(manifest, indent=2)
-    latest_date = escape(manifest["latest_date"])
+    latest_date = escape(_format_init_datetime(manifest["latest_date"]))
 
     template = """<!doctype html>
 <html lang="en">
@@ -173,7 +186,14 @@ def _render_html(manifest: dict) -> str:
       backdrop-filter: blur(14px);
     }
     .controls { padding: 18px 20px; margin-bottom: 18px; }
-    .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+    .slider-row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
     .slider-labels { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; color: var(--muted); font-size: 0.92rem; }
     input[type="range"] { width: 100%; accent-color: var(--accent); }
     .step-title { font-size: 1.25rem; font-weight: 700; }
@@ -210,6 +230,7 @@ def _render_html(manifest: dict) -> str:
     @media (max-width: 980px) {
       .grid { grid-template-columns: 1fr; }
       .slider-row { grid-template-columns: 1fr; }
+      .slider-meta { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -225,16 +246,14 @@ def _render_html(manifest: dict) -> str:
 
     <section class="controls">
       <div class="slider-row">
-        <div>
+        <div class="slider-meta">
           <div class="step-title" id="step-title"></div>
           <div class="slider-labels">
             <span id="step-range-start"></span>
             <span id="step-range-end"></span>
           </div>
         </div>
-        <div>
-          <input id="step-slider" type="range" min="0" max="0" step="1" value="0">
-        </div>
+        <input id="step-slider" type="range" min="0" max="0" step="1" value="0">
       </div>
     </section>
 
@@ -376,7 +395,7 @@ def main(argv: list[str] | None = None) -> None:
 
     settings = load_settings()
     charts_dir = args.charts_dir or Path(settings.paths.charts_dir)
-    output_dir = args.output_dir or (charts_dir / "website")
+    output_dir = args.output_dir or Path(settings.paths.web_dir)
 
     index_path = build_site(charts_dir, output_dir)
     print(f"Wrote website: {index_path}")

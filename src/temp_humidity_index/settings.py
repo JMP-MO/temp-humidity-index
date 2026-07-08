@@ -16,6 +16,7 @@ class ProjectPaths:
     data_dir: Path
     download_dir: Path
     charts_dir: Path
+    web_dir: Path
 
 
 @dataclass(frozen=True)
@@ -27,9 +28,17 @@ class ProjectFiles:
 
 
 @dataclass(frozen=True)
+class Retrieval:
+    parameters: list[str]
+    forecast_hours: int
+    step_increment: int
+
+
+@dataclass(frozen=True)
 class Settings:
     paths: ProjectPaths
     files: ProjectFiles
+    retrieval: Retrieval
 
     @property
     def raw_grib_path(self) -> Path:
@@ -84,11 +93,13 @@ def load_settings() -> Settings:
         os.getenv("THI_DOWNLOAD_DIR", paths_data.get("download_dir", str(data_dir)))
     )
     charts_dir = _resolve_path(os.getenv("THI_CHARTS_DIR", paths_data.get("charts_dir", "charts")))
+    web_dir = _resolve_path(os.getenv("THI_WEB_DIR", paths_data.get("web_dir", "web")))
 
     paths = ProjectPaths(
         data_dir=data_dir,
         download_dir=download_dir,
         charts_dir=charts_dir,
+        web_dir=web_dir,
     )
     files = ProjectFiles(
         raw_grib=files_data.get("raw_grib", "ifs_2t_dp_msl.grib"),
@@ -97,7 +108,14 @@ def load_settings() -> Settings:
         thi_nc=files_data.get("thi_nc", "ifs_thi.nc"),
     )
 
-    settings = Settings(paths=paths, files=files)
+    retrieval_data = data.get("retrieval", {})
+    retrieval = Retrieval(
+        parameters=retrieval_data.get("parameters", ["2d", "2t", "msl"]),
+        forecast_hours=retrieval_data.get("forecast_hours", 168),
+        step_increment=retrieval_data.get("step_increment", 6),
+    )
+
+    settings = Settings(paths=paths, files=files, retrieval=retrieval)
 
     settings.paths.data_dir.mkdir(parents=True, exist_ok=True)
     settings.paths.download_dir.mkdir(parents=True, exist_ok=True)

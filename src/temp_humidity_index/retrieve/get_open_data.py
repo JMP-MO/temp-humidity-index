@@ -15,10 +15,10 @@ def main():
     settings = load_settings()
 
     # Params
-    parameters = ['2d', '2t', 'msl']
+    parameters = settings.retrieval.parameters
     filename = settings.raw_grib_path
     nc_filename = settings.raw_nc_path
-    steps = list(range(0, 49, 6))
+    steps = list(range(0, settings.retrieval.forecast_hours + 1, settings.retrieval.step_increment))
 
     _remove_if_exists(filename)
     _remove_if_exists(nc_filename)

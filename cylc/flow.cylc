@@ -1,0 +1,83 @@
+[meta]
+    title = Temperature Humidity Index pipeline
+
+[scheduler]
+    allow implicit tasks = False
+
+[scheduling]
+    cycling mode = gregorian
+    max active cycle points = 1
+    # Test cadence: run once per day at 03Z.
+    initial cycle point = now
+
+    [[xtriggers]]
+        # Prevent runahead by waiting for real wall-clock time at each cycle point.
+        ready = wall_clock(offset=PT0S)
+
+    [[graph]]
+        T03/PT06H = """
+            @ready => get_open_data =>
+            calc_wet_bulb_temp =>
+            calc_thi
+
+            calc_thi => plot_heat_risk_charts => build_website
+            calc_thi => plot_charts => build_website
+        """
+
+[runtime]
+    [[root]]
+        platform = spice
+        execution time limit = PT1H
+        env-script = """
+            unset CONDA_PREFIX CONDA_DEFAULT_ENV PYTHONHOME PYTHONPATH VIRTUAL_ENV
+            export THI_VENV="/home/users/john.pill/Projects/temp-humidity-index/.venv"
+            export VIRTUAL_ENV="${THI_VENV}"
+            export PATH="${THI_VENV}/bin:${PATH}"
+        """
+        [[[environment]]]
+            THI_PROJECT_ROOT = /home/users/john.pill/Projects/temp-humidity-index
+        [[[directives]]]
+            --ntasks = 1
+            --mem = 4G
+
+    [[get_open_data]]
+        # Retry for upstream/data-availability failures.
+        execution retry delays = PT15M, PT30M, PT1H
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            get-open-data
+        """
+
+    [[calc_wet_bulb_temp]]
+        execution time limit = PT3H
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            calc-wet-bulb-temp
+        """
+        [[[directives]]]
+            --ntasks = 4
+            --mem = 16G
+
+    [[calc_thi]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            calc-thi
+        """
+
+    [[plot_heat_risk_charts]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            plot-heat-risk-charts
+        """
+
+    [[plot_charts]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            plot-variable-charts
+        """
+
+    [[build_website]]
+        script = """
+            cd "${THI_PROJECT_ROOT}"
+            build-website
+        """

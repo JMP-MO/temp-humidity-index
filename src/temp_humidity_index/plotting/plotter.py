@@ -98,8 +98,8 @@ def plot_variable_dataset(
     var_name = _resolve_variable_name(ds, requested_var)
     data_var, plot_units = _to_plot_units(ds[var_name], var_name)
 
-    init_val, init_str, init_date = get_initialisation_time(ds)
-    run_dir = charts_dir / init_date
+    init_val, init_str, init_datetime = get_initialisation_time(ds)
+    run_dir = charts_dir / init_datetime
     run_dir.mkdir(parents=True, exist_ok=True)
 
     if "step" in data_var.dims:
@@ -120,7 +120,7 @@ def plot_variable_dataset(
         valid_str = np.datetime_as_string(valid, unit="m") if valid is not None else "N/A"
 
         step_hours = get_step_hours(ds, step_idx)
-        out_file = run_dir / f"{output_stem}_{init_date}_{step_hours:03d}.png"
+        out_file = run_dir / f"{output_stem}_{init_datetime}_{step_hours:03d}.png"
 
         units = plot_units
         resolved_label = colorbar_label or (
