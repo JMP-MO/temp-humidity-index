@@ -1,4 +1,5 @@
 # Temperature Humidity Index Readme
+This is an experimental CPD project - outputs could be incorrect. 
 
 ## Configuration
 
