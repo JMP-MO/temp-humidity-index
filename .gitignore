@@ -22,4 +22,4 @@ wheels/
 *.idx
 
 # Local, machine-specific settings overrides
-config/settings.local.yaml
+config/settings.yaml
