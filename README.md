@@ -18,22 +18,22 @@ To customize per-machine paths without editing committed config:
 
 ### Project Flow
 
-**get_open_data:** 
+* **get_open_data:** 
     - get 2d, 2t, msl from ecmwf opendata. 
     - Convert to netcdf
 
-**calc_wet_bulb_temp:**
+* **calc_wet_bulb_temp:**
     - uses 2d, 2t and a fast calculation approach. 
 
-**calc_temp_humidity_idx:**
+* **calc_temp_humidity_idx:**
     - impliments the given THI calculation
 
-**Plotting:**
+* **Plotting:**
     - Plot THI values
     - Plot THI binned index categories
     - Plot input variables for debugging. 
 
-**Website:**
+* **Website:**
     - Build and interactive website to display the charts for forecasters. 
     - Slider to move through the forecast time. 
     - Uses public_html
