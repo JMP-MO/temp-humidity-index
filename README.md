@@ -12,19 +12,8 @@ All project file paths are centrally configured in `config/settings.yaml`.
 
 To customize per-machine paths without editing committed config:
 
-1. Copy `config/settings.local.example.yaml` to `config/settings.local.yaml`
-2. Edit `paths` values for your machine (macOS, Linux scratch, public_html, etc.)
-
-`config/settings.local.yaml` is gitignored.
-
-You can also override paths with environment variables:
-
-- `THI_SETTINGS_FILE`
-- `THI_DATA_DIR`
-- `THI_DOWNLOAD_DIR`
-- `THI_CHARTS_DIR`
-
-
+* Edit `paths` values for your machine in the config/settings_example.yaml file and save as settings.yaml.
+* `config/settings.yaml` is gitignored.
 
 
 ### Project Flow
@@ -34,10 +23,20 @@ You can also override paths with environment variables:
     - Convert to netcdf
 
 **calc_wet_bulb_temp:**
-    - uses 2d, 2t and msl to calculate wet bulb temperature using metpy.
-    - does this in parallel. 
+    - uses 2d, 2t and a fast calculation approach. 
 
 **calc_temp_humidity_idx:**
+    - impliments the given THI calculation
+
+**Plotting:**
+    - Plot THI values
+    - Plot THI binned index categories
+    - Plot input variables for debugging. 
+
+**Website:**
+    - Build and interactive website to display the charts for forecasters. 
+    - Slider to move through the forecast time. 
+    - Uses public_html
 
 
 ### cylc Workflow
