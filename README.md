@@ -12,7 +12,7 @@ All project file paths are centrally configured in `config/settings.yaml`.
 
 To customize per-machine paths without editing committed config:
 
-* Edit `paths` values for your machine in the config/settings_example.yaml file and save as settings.yaml.
+* Edit `paths` values for your machine in the config/settings_example.yaml file and save as `config/settings.yaml`.
 * `config/settings.yaml` is gitignored.
 
 
